@@ -29,7 +29,7 @@ async def get_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
             InlineKeyboardButton("🎬 فيديو 720p", callback_data="720")
         ],
         [
-            InlineKeyboardButton("🎵 صوت MP3", callback_data="audio")
+            InlineKeyboardButton("🎵 تحميل صوت", callback_data="audio")
         ]
     ]
 
@@ -58,6 +58,14 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "outtmpl": "video.mp4"
         }
 
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+
+        await query.message.reply_video(video=open("video.mp4","rb"))
+
+        os.remove("video.mp4")
+
+
     elif query.data == "720":
 
         await query.message.reply_text("⏳ جاري تحميل الفيديو 720p")
@@ -67,34 +75,31 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "outtmpl": "video.mp4"
         }
 
-    elif query.data == "audio":
-
-        await query.message.reply_text("⏳ جاري استخراج الصوت")
-
-        ydl_opts = {
-            "format": "bestaudio/best",
-            "outtmpl": "audio.%(ext)s",
-            "postprocessors": [{
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
-                "preferredquality": "192"
-            }]
-        }
-
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
-        await query.message.reply_audio(audio=open("audio.mp3","rb"))
+        await query.message.reply_video(video=open("video.mp4","rb"))
 
-        os.remove("audio.mp3")
-        return
+        os.remove("video.mp4")
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
 
-    await query.message.reply_video(video=open("video.mp4","rb"))
+    elif query.data == "audio":
 
-    os.remove("video.mp4")
+        await query.message.reply_text("⏳ جاري تحميل الصوت")
+
+        ydl_opts = {
+            "format": "bestaudio/best",
+            "outtmpl": "audio.%(ext)s"
+        }
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            filename = ydl.prepare_filename(info)
+
+        await query.message.reply_audio(audio=open(filename,"rb"))
+
+        os.remove(filename)
+
 
 app = ApplicationBuilder().token(TOKEN).build()
 
